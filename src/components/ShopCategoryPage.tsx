@@ -614,6 +614,78 @@ export const ShopCategoryPage: React.FC<ShopCategoryPageProps> = ({
       s => s.isActive !== false && (isAllOrShopTab ? true : isCategoryMatch(s.parentSlug, currentSlug))
     );
 
+    // Guaranteed fallback: If gadgets parent group is missing, inject it so it is never missing on the storefront
+    const hasGadgetParent = activeSubs.some(s => (!s.parentSub || s.parentSub === '') && (s.parentSlug === 'gadgets' || s.name?.includes('গ্যাজেট')));
+    if (!hasGadgetParent && (isAllOrShopTab || currentSlug === 'gadgets')) {
+      const fallbackGadgets = [
+        {
+          id: 'sub-gadgets-parent',
+          name: 'গ্যাজেট কালেকশন',
+          parentSlug: 'gadgets',
+          description: 'স্মার্ট ওয়াচ, বাটন ফোন, হেডফোন ও প্রিমিয়াম গ্যাজেটস কালেকশন।',
+          imageUrl: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&auto=format&fit=crop&q=80',
+          order: 2,
+          isActive: true
+        },
+        {
+          id: 'sub-gadgets-phone',
+          name: 'বাটন ফোন',
+          parentSlug: 'gadgets',
+          parentSub: 'গ্যাজেট কালেকশন',
+          description: 'প্রিমিয়াম ফিচার ও বাটন ফোন কালেকশন',
+          imageUrl: 'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=600&auto=format&fit=crop&q=80',
+          order: 1,
+          isActive: true
+        },
+        {
+          id: 'sub-gadgets-watch',
+          name: 'স্মার্ট ওয়াচ',
+          parentSlug: 'gadgets',
+          parentSub: 'গ্যাজেট কালেকশন',
+          description: 'লেটেস্ট স্মার্ট ওয়াচ ও ফিটনেস ট্র্যাকার',
+          imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80',
+          order: 2,
+          isActive: true
+        },
+        {
+          id: 'sub-gadgets-headphone',
+          name: 'হেডফোন ও এয়ারবাডস',
+          parentSlug: 'gadgets',
+          parentSub: 'গ্যাজেট কালেকশন',
+          description: 'ওয়্যারলেস ইয়ারবাডস ও সাউন্ড হেডসেট',
+          imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80',
+          order: 3,
+          isActive: true
+        },
+        {
+          id: 'sub-gadgets-powerbank',
+          name: 'পাওয়ার ব্যাংক',
+          parentSlug: 'gadgets',
+          parentSub: 'গ্যাজেট কালেকশন',
+          description: 'ফাস্ট চার্জিং পাওয়ার ব্যাংক কালেকশন',
+          imageUrl: 'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=600&auto=format&fit=crop&q=80',
+          order: 4,
+          isActive: true
+        },
+        {
+          id: 'sub-gadgets-accessories',
+          name: 'স্মার্ট এক্সেসরিজ',
+          parentSlug: 'gadgets',
+          parentSub: 'গ্যাজেট কালেকশন',
+          description: 'কেব্‌ল, চার্জার ও প্রয়োজনীয় গ্যাজেট এক্সেসরিজ',
+          imageUrl: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&auto=format&fit=crop&q=80',
+          order: 5,
+          isActive: true
+        }
+      ];
+
+      for (const item of fallbackGadgets) {
+        if (!activeSubs.some(s => s.id === item.id)) {
+          activeSubs.push(item);
+        }
+      }
+    }
+
     // Deduplicate activeSubs by id
     const uniqueSubsMap = new Map();
     for (const sub of activeSubs) {
