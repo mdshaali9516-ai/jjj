@@ -321,9 +321,22 @@ export const PublicStorefront: React.FC = () => {
       }
     });
 
+    const getCategoryPriority = (pg: any) => {
+      const isGadget = pg.parentSlug === 'gadgets' || pg.name?.toLowerCase().includes('gadget') || pg.name?.includes('গ্যাজেট') || pg.name?.toLowerCase().includes('mobail');
+      const isOther = pg.parentSlug === 'other' || pg.name?.toLowerCase().includes('book') || pg.name?.includes('অন্যান্য');
+      if (isGadget) return 2;
+      if (isOther) return 3;
+      return 1;
+    };
+
     if (parentGroups.length > 0) {
       return parentGroups
-        .sort((a, b) => (a.order || 0) - (b.order || 0))
+        .sort((a, b) => {
+          const prioA = getCategoryPriority(a);
+          const prioB = getCategoryPriority(b);
+          if (prioA !== prioB) return prioA - prioB;
+          return (a.order || 0) - (b.order || 0);
+        })
         .map(pg => {
           const childItems = activeSubs
             .filter(s => s.parentSub && s.parentSub.trim().toLowerCase() === pg.name.trim().toLowerCase())
