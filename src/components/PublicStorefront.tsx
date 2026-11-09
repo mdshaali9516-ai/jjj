@@ -221,7 +221,7 @@ export const PublicStorefront: React.FC = () => {
     // Guaranteed fallback: If gadgets parent group is missing, inject it so it is never missing on the public storefront
     const hasGadgetParent = activeSubs.some(s => (!s.parentSub || s.parentSub === '') && (s.parentSlug === 'gadgets' || s.name?.includes('গ্যাজেট')));
     if (!hasGadgetParent) {
-      activeSubs.push(
+      const fallbackGadgets = [
         {
           id: 'sub-gadgets-parent',
           name: 'গ্যাজেট কালেকশন',
@@ -281,8 +281,23 @@ export const PublicStorefront: React.FC = () => {
           order: 5,
           isActive: true
         }
-      );
+      ];
+
+      for (const item of fallbackGadgets) {
+        if (!activeSubs.some(s => s.id === item.id)) {
+          activeSubs.push(item);
+        }
+      }
     }
+
+    // Deduplicate activeSubs strictly by id to prevent duplicate keys under any circumstance
+    const uniqueSubsMap = new Map();
+    for (const sub of activeSubs) {
+      if (!uniqueSubsMap.has(sub.id)) {
+        uniqueSubsMap.set(sub.id, sub);
+      }
+    }
+    activeSubs = Array.from(uniqueSubsMap.values());
 
     const parentGroups = activeSubs.filter(s => !s.parentSub);
 
@@ -295,6 +310,15 @@ export const PublicStorefront: React.FC = () => {
             .sort((a, b) => (a.order || 0) - (b.order || 0));
 
           const itemsToUse = childItems.length > 0 ? childItems : [pg];
+
+          // Ensure items inside each group are unique by id
+          const uniqueItemsMap = new Map();
+          for (const item of itemsToUse) {
+            if (!uniqueItemsMap.has(item.id)) {
+              uniqueItemsMap.set(item.id, item);
+            }
+          }
+          const uniqueItems = Array.from(uniqueItemsMap.values());
 
           const isGadget = pg.parentSlug === 'gadgets' || pg.name?.toLowerCase().includes('gadget') || pg.name?.includes('গ্যাজেট') || pg.name?.toLowerCase().includes('mobail');
           const isOther = pg.parentSlug === 'other' || pg.name?.toLowerCase().includes('book') || pg.name?.includes('অন্যান্য');
@@ -314,7 +338,7 @@ export const PublicStorefront: React.FC = () => {
             bgColor,
             borderColor,
             accentColor,
-            items: itemsToUse.map(item => ({
+            items: uniqueItems.map(item => ({
               id: item.id,
               parentSlug: item.parentSlug || resolvedSlug,
               nameBn: item.name,
@@ -863,9 +887,9 @@ export const PublicStorefront: React.FC = () => {
 
                   {/* Sub-categories Grid */}
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3">
-                    {group.items.map((item) => (
+                    {group.items.map((item, itemIdx) => (
                       <div
-                        key={item.id}
+                        key={`${group.id}_${item.id}_${itemIdx}`}
                         onClick={() => {
                           setPublicSearch('');
                           setSelectedPublicSubcategory(item.nameBn);

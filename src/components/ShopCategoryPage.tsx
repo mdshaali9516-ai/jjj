@@ -610,9 +610,18 @@ export const ShopCategoryPage: React.FC<ShopCategoryPageProps> = ({
 
   // Dynamic Category Configuration from backend Database / Subsections
   const categoryConfig = useMemo(() => {
-    const activeSubs = (subsections || []).filter(
+    let activeSubs = (subsections || []).filter(
       s => s.isActive !== false && (isAllOrShopTab ? true : isCategoryMatch(s.parentSlug, currentSlug))
     );
+
+    // Deduplicate activeSubs by id
+    const uniqueSubsMap = new Map();
+    for (const sub of activeSubs) {
+      if (!uniqueSubsMap.has(sub.id)) {
+        uniqueSubsMap.set(sub.id, sub);
+      }
+    }
+    activeSubs = Array.from(uniqueSubsMap.values());
 
     // Find parent group subsections (those without parentSub)
     const parentGroups = activeSubs.filter(s => !s.parentSub);
@@ -628,21 +637,24 @@ export const ShopCategoryPage: React.FC<ShopCategoryPageProps> = ({
             .filter(s => s.parentSub && s.parentSub.trim() === pg.name.trim())
             .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-          const items = childItems.length > 0
-            ? childItems.map(item => ({
-                id: item.id,
-                nameBn: item.name,
-                nameEn: item.name,
-                count: getSubCatCount(item.name, item.name, currentSlug),
-                image: item.imageUrl || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&auto=format&fit=crop&q=80',
-              }))
-            : [{
-                id: pg.id,
-                nameBn: pg.name,
-                nameEn: pg.name,
-                count: getSubCatCount(pg.name, pg.name, currentSlug),
-                image: pg.imageUrl || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&auto=format&fit=crop&q=80',
-              }];
+          const rawItems = childItems.length > 0 ? childItems : [pg];
+
+          // Deduplicate items in this group
+          const uniqueGroupItemsMap = new Map();
+          for (const item of rawItems) {
+            if (!uniqueGroupItemsMap.has(item.id)) {
+              uniqueGroupItemsMap.set(item.id, item);
+            }
+          }
+          const uniqueGroupItems = Array.from(uniqueGroupItemsMap.values());
+
+          const items = uniqueGroupItems.map(item => ({
+            id: item.id,
+            nameBn: item.name,
+            nameEn: item.name,
+            count: getSubCatCount(item.name, item.name, currentSlug),
+            image: item.imageUrl || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&auto=format&fit=crop&q=80',
+          }));
 
           const isGadget = pg.parentSlug === 'gadgets' || pg.name?.toLowerCase().includes('gadget') || pg.name?.includes('গ্যাজেট');
           const isOther = pg.parentSlug === 'other' || pg.name?.toLowerCase().includes('book') || pg.name?.includes('অন্যান্য');
@@ -1087,9 +1099,9 @@ export const ShopCategoryPage: React.FC<ShopCategoryPageProps> = ({
 
                   {/* Sub-categories Grid (Exact Card Layout from Image 2) */}
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-3">
-                    {group.items.map((item) => (
+                    {group.items.map((item, itemIdx) => (
                       <div
-                        key={item.id}
+                        key={`${group.id}_${item.id}_${itemIdx}`}
                         onClick={() => handleSelectSubCategory(item.nameBn)}
                         className="group cursor-pointer bg-white rounded-xl border border-slate-300 hover:border-[#009245] p-1.5 sm:p-2.5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between active:scale-95 shadow-2xs"
                       >
@@ -1513,9 +1525,9 @@ export const ShopCategoryPage: React.FC<ShopCategoryPageProps> = ({
                         {group.titleBn}
                       </h5>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 md:gap-2">
-                        {group.items.map((subcat) => (
+                        {group.items.map((subcat, subcatIdx) => (
                           <button
-                            key={subcat.id}
+                            key={`${group.id}_${subcat.id}_${subcatIdx}`}
                             onClick={() => {
                               setSelectedSubCategory(subcat.nameBn);
                               setCategoryDrawerOpen(false);
