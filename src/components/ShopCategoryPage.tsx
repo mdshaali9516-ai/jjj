@@ -698,6 +698,26 @@ export const ShopCategoryPage: React.FC<ShopCategoryPageProps> = ({
     // Find parent group subsections (those without parentSub)
     const parentGroups = activeSubs.filter(s => !s.parentSub);
 
+    // Also check if any child items have a parentSub that isn't in parentGroups
+    const parentGroupNames = new Set(parentGroups.map(p => p.name.trim().toLowerCase()));
+    activeSubs.forEach(s => {
+      if (s.parentSub && s.parentSub.trim()) {
+        const pName = s.parentSub.trim();
+        if (!parentGroupNames.has(pName.toLowerCase())) {
+          parentGroupNames.add(pName.toLowerCase());
+          parentGroups.push({
+            id: `virtual-parent-${s.parentSlug || 'shop'}-${pName.replace(/\s+/g, '-').toLowerCase()}`,
+            name: pName,
+            parentSlug: s.parentSlug || 'shop',
+            description: '',
+            imageUrl: s.imageUrl || 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&auto=format&fit=crop&q=80',
+            order: 99,
+            isActive: true
+          });
+        }
+      }
+    });
+
     let groups: CategoryGroup[] = [];
 
     if (parentGroups.length > 0) {

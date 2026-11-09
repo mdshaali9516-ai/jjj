@@ -301,24 +301,46 @@ export const PublicStorefront: React.FC = () => {
 
     const parentGroups = activeSubs.filter(s => !s.parentSub);
 
+    // Also check if any child items have a parentSub that isn't in parentGroups
+    const parentGroupNames = new Set(parentGroups.map(p => p.name.trim().toLowerCase()));
+    activeSubs.forEach(s => {
+      if (s.parentSub && s.parentSub.trim()) {
+        const pName = s.parentSub.trim();
+        if (!parentGroupNames.has(pName.toLowerCase())) {
+          parentGroupNames.add(pName.toLowerCase());
+          parentGroups.push({
+            id: `virtual-parent-${s.parentSlug || 'shop'}-${pName.replace(/\s+/g, '-').toLowerCase()}`,
+            name: pName,
+            parentSlug: s.parentSlug || 'shop',
+            description: '',
+            imageUrl: s.imageUrl || 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&auto=format&fit=crop&q=80',
+            order: 99,
+            isActive: true
+          });
+        }
+      }
+    });
+
     if (parentGroups.length > 0) {
       return parentGroups
         .sort((a, b) => (a.order || 0) - (b.order || 0))
         .map(pg => {
           const childItems = activeSubs
-            .filter(s => s.parentSub && s.parentSub.trim() === pg.name.trim())
+            .filter(s => s.parentSub && s.parentSub.trim().toLowerCase() === pg.name.trim().toLowerCase())
             .sort((a, b) => (a.order || 0) - (b.order || 0));
 
           const itemsToUse = childItems.length > 0 ? childItems : [pg];
 
-          // Ensure items inside each group are unique by id
-          const uniqueItemsMap = new Map();
+          // Ensure items inside each group are unique by normalized name and ID
+          const seenNames = new Set();
+          const uniqueItems = [];
           for (const item of itemsToUse) {
-            if (!uniqueItemsMap.has(item.id)) {
-              uniqueItemsMap.set(item.id, item);
+            const normKey = (item.name || '').trim().toLowerCase();
+            if (!seenNames.has(normKey)) {
+              seenNames.add(normKey);
+              uniqueItems.push(item);
             }
           }
-          const uniqueItems = Array.from(uniqueItemsMap.values());
 
           const isGadget = pg.parentSlug === 'gadgets' || pg.name?.toLowerCase().includes('gadget') || pg.name?.includes('গ্যাজেট') || pg.name?.toLowerCase().includes('mobail');
           const isOther = pg.parentSlug === 'other' || pg.name?.toLowerCase().includes('book') || pg.name?.includes('অন্যান্য');
