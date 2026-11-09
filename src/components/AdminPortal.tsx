@@ -4662,17 +4662,24 @@ export const AdminPortal: React.FC = () => {
                         ref={provided.innerRef}
                         className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"
                       >
-                        {subsections
-                          .filter(sub => {
-                            const pSlug = (sub.parentSlug || '').toLowerCase();
-                            const pathSlug = (adminCategoryPath.categorySlug || '').toLowerCase();
-                            if (adminCategoryPath.subcategory) {
-                              return pSlug === pathSlug && sub.parentSub === adminCategoryPath.subcategory;
-                            }
-                            return pSlug === pathSlug && !sub.parentSub;
-                          })
-                          .sort((a, b) => a.order - b.order)
-                          .map((sub, idx) => (
+                        {(() => {
+                          const pSlug = (adminCategoryPath.categorySlug || '').toLowerCase();
+                          const categorySubsections = subsections.filter(sub => (sub.parentSlug || '').toLowerCase() === pSlug);
+                          const parentGroups = categorySubsections.filter(sub => !sub.parentSub);
+
+                          const list = categorySubsections
+                            .filter(sub => {
+                              if (adminCategoryPath.subcategory) {
+                                return sub.parentSub === adminCategoryPath.subcategory;
+                              }
+                              if (parentGroups.length > 0) {
+                                return !sub.parentSub;
+                              }
+                              return true;
+                            })
+                            .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+                          return list.map((sub, idx) => (
                             <Draggable key={sub.id} draggableId={sub.id} index={idx}>
                               {(provided) => (
                                 <div 
@@ -4808,20 +4815,31 @@ export const AdminPortal: React.FC = () => {
                                 </div>
                               )}
                             </Draggable>
-                          ))}
+                          ));
+                        })()}
                         {provided.placeholder}
                       </div>
                     )}
                   </Droppable>
                 </DragDropContext>
 
-                {subsections.filter(sub => {
-                  const currentSlug = adminCategoryPath.categorySlug?.toLowerCase();
-                  if (adminCategoryPath.subcategory) {
-                    return sub.parentSlug?.toLowerCase() === currentSlug && sub.parentSub === adminCategoryPath.subcategory;
-                  }
-                  return sub.parentSlug?.toLowerCase() === currentSlug && !sub.parentSub;
-                }).length === 0 && (
+                {(() => {
+                  const pSlug = (adminCategoryPath.categorySlug || '').toLowerCase();
+                  const categorySubsections = subsections.filter(sub => (sub.parentSlug || '').toLowerCase() === pSlug);
+                  const parentGroups = categorySubsections.filter(sub => !sub.parentSub);
+
+                  const count = categorySubsections
+                    .filter(sub => {
+                      if (adminCategoryPath.subcategory) {
+                        return sub.parentSub === adminCategoryPath.subcategory;
+                      }
+                      if (parentGroups.length > 0) {
+                        return !sub.parentSub;
+                      }
+                      return true;
+                    }).length;
+                  return count === 0;
+                })() && (
                   <div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-3">
                     <p className="text-sm font-bold text-slate-700">
                       {lang === 'bn' ? 'এই সেকশনে এখনো কোনো সাব-সেকশন বা আইটেম যোগ করা হয়নি।' : 'No items added in this category yet.'}

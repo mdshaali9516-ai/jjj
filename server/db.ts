@@ -894,17 +894,17 @@ class Database {
       this.state.subsections = [];
     }
     const hasGadgetParent = (this.state.subsections || []).some(
-      s => s.parentSlug === 'gadgets' && (!s.parentSub || s.parentSub === '')
+      s => (s.parentSlug === 'gadgets' || s.id === 'sub-gadgets-parent') && (!s.parentSub || s.parentSub === '')
     );
     if (!hasGadgetParent && !this.isDeleted('subsections', 'sub-gadgets-parent')) {
-      this.state.subsections.push(
+      const gadgetDefaults: Subsection[] = [
         {
           id: 'sub-gadgets-parent',
           name: 'গ্যাজেট কালেকশন',
           parentSlug: 'gadgets',
           description: 'স্মার্ট ওয়াচ, বাটন ফোন, হেডফোন ও প্রিমিয়াম গ্যাজেটস কালেকশন।',
           imageUrl: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&auto=format&fit=crop&q=80',
-          order: 2,
+          order: 1,
           isActive: true
         },
         {
@@ -957,7 +957,12 @@ class Database {
           order: 5,
           isActive: true
         }
-      );
+      ];
+      for (const item of gadgetDefaults) {
+        if (!this.state.subsections.some(s => s.id === item.id)) {
+          this.state.subsections.push(item);
+        }
+      }
     }
     this.state.publishedSubsections = (this.state.subsections || []).filter(s => s.isActive !== false);
     if (!this.state.referralSettings) {

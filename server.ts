@@ -299,7 +299,7 @@ app.get(['/uploads/:filename', '/api/media/:id'], async (req: Request, res: Resp
   } catch (err) {
     console.warn('[Media-Route] Media retrieval error:', err);
   }
-  next();
+  return res.status(404).json({ error: 'Media asset not found', param });
 });
 
 app.use('/uploads', express.static(uploadsDir, { maxAge: '7d' }));
